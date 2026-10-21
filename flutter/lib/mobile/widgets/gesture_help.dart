@@ -353,7 +353,7 @@ class _GestureHelpState extends State<GestureHelp> {
             )));
   }
 
-  /// "Pointer speed" slider and "Pointer acceleration" checkbox for mouse mode.
+  /// Pointer speed, acceleration and inertia options for mouse mode.
   Widget _buildPointerSpeedOptions(InputModel inputModel) {
     final accel = inputModel.pointerAcceleration;
     Future<void> toggleAcceleration() async {
@@ -412,6 +412,27 @@ class _GestureHelpState extends State<GestureHelp> {
               ],
             ),
           ),
+          if (accel.enabled)
+            Transform.translate(
+              offset: const Offset(0.0, -12.0),
+              child: Row(
+                children: [
+                  Text(translate('Weak')),
+                  Expanded(
+                    child: Slider(
+                      value: accel.strength,
+                      min: PointerAcceleration.kMinStrength,
+                      max: PointerAcceleration.kMaxStrength,
+                      onChanged: (value) async {
+                        await inputModel.setPointerAccelerationStrength(value);
+                        setState(() {});
+                      },
+                    ),
+                  ),
+                  Text(translate('Strong')),
+                ],
+              ),
+            ),
           Transform.translate(
             offset: const Offset(-10.0, -12.0),
             child: Row(

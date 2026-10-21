@@ -189,6 +189,8 @@ const String kOptionVirtualMouseScale = "virtual-mouse-scale";
 const String kOptionShowVirtualJoystick = "show-virtual-joystick";
 const String kOptionMobilePointerAcceleration = "mobile-pointer-acceleration";
 const String kOptionMobilePointerSpeed = "mobile-pointer-speed";
+const String kOptionMobilePointerAccelerationStrength =
+    "mobile-pointer-acceleration-strength";
 const String kOptionMobilePointerInertia = "mobile-pointer-inertia";
 const String kOptionMobilePointerInertiaLength =
     "mobile-pointer-inertia-length";

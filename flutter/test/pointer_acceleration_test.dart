@@ -58,17 +58,40 @@ void main() {
           PointerAcceleration()..enabled = true, const Offset(8, 0), 25, 4);
       expect(slow.dx, closeTo(200, 1e-9));
       expect(fast.dx, greaterThan(2.5 * slow.dx));
-      expect(fast.dx, lessThanOrEqualTo(PointerAcceleration.kMaxGain * 200));
+      expect(fast.dx,
+          lessThanOrEqualTo(PointerAcceleration.kDefaultStrength * 200));
     });
 
     test('gain is monotonic and capped', () {
+      final a = PointerAcceleration();
       var prev = 0.0;
       for (var v = 0.0; v <= 5.0; v += 0.05) {
-        final g = PointerAcceleration.gainForVelocity(v);
+        final g = a.gainForVelocity(v);
         expect(g, greaterThanOrEqualTo(prev));
-        expect(g, inInclusiveRange(1.0, PointerAcceleration.kMaxGain));
+        expect(g, inInclusiveRange(1.0, PointerAcceleration.kDefaultStrength));
         prev = g;
       }
+    });
+
+    test('strength sets the gain of fast movements only', () {
+      final weak = PointerAcceleration()..strength = 2.0;
+      final strong = PointerAcceleration()..strength = 8.0;
+      expect(weak.gainForVelocity(0.2), 1.0);
+      expect(strong.gainForVelocity(0.2), 1.0);
+      expect(weak.gainForVelocity(3.0), 2.0);
+      expect(strong.gainForVelocity(3.0), 8.0);
+      expect(
+          strong.gainForVelocity(1.4), greaterThan(weak.gainForVelocity(1.4)));
+    });
+
+    test('strength is clamped', () {
+      final a = PointerAcceleration();
+      a.strength = 0.5;
+      expect(a.strength, PointerAcceleration.kMinStrength);
+      a.strength = 100;
+      expect(a.strength, PointerAcceleration.kMaxStrength);
+      a.strength = double.nan;
+      expect(a.strength, PointerAcceleration.kDefaultStrength);
     });
 
     test('first move of a stroke and moves after a pause are not boosted', () {
