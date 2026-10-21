@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/scheduler.dart';
 
 import 'package:flutter_hbb/models/platform_model.dart';
 import 'package:flutter_hbb/common.dart';
@@ -86,7 +87,8 @@ class RawTouchGestureDetectorRegion extends StatefulWidget {
 ///   DoubleFiner -> right click
 ///   HoldDrag -> left drag
 class _RawTouchGestureDetectorRegionState
-    extends State<RawTouchGestureDetectorRegion> {
+    extends State<RawTouchGestureDetectorRegion>
+    with SingleTickerProviderStateMixin {
   Offset _cacheLongPressPosition = Offset(0, 0);
   // Timestamp of the last long press event.
   int _cacheLongPressPositionTs = 0;
@@ -110,6 +112,12 @@ class _RawTouchGestureDetectorRegionState
   // Cache global position for onTap (which lacks position info).
   Offset? _lastTapDownGlobalPosition;
 
+  // Mouse mode: drives the pointer inertia (glide) after a flick.
+  late final Ticker _inertiaTicker = createTicker(_onInertiaTick);
+  Duration _inertiaLastTick = Duration.zero;
+  // A touch that stops a glide only stops it, it does not also click.
+  bool _inertiaStoppedByTouch = false;
+
   FFI get ffi => widget.ffi;
   FfiModel get ffiModel => widget.ffiModel;
   InputModel get inputModel => widget.inputModel;
@@ -118,11 +126,65 @@ class _RawTouchGestureDetectorRegionState
   bool get canvasLocked => isMobile && ffi.canvasModel.locked;
 
   @override
+  void dispose() {
+    inputModel.pointerInertia.stop();
+    _inertiaTicker.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return RawGestureDetector(
-      child: widget.child,
-      gestures: makeGestures(context),
+    return Listener(
+      onPointerDown: _onPointerDown,
+      child: RawGestureDetector(
+        child: widget.child,
+        gestures: makeGestures(context),
+      ),
     );
+  }
+
+  void _onPointerDown(PointerDownEvent e) {
+    _inertiaStoppedByTouch = inputModel.pointerInertia.active;
+    if (_inertiaStoppedByTouch) {
+      _stopInertia();
+    }
+  }
+
+  void _startInertia(Offset velocityPerMs) {
+    if (!inputModel.pointerInertia.start(velocityPerMs)) return;
+    _inertiaLastTick = Duration.zero;
+    if (!_inertiaTicker.isActive) {
+      _inertiaTicker.start();
+    }
+  }
+
+  void _stopInertia() {
+    inputModel.pointerInertia.stop();
+    if (_inertiaTicker.isActive) {
+      _inertiaTicker.stop();
+    }
+  }
+
+  Future<void> _onInertiaTick(Duration elapsed) async {
+    final inertia = inputModel.pointerInertia;
+    if (!inertia.active || handleTouch) {
+      _stopInertia();
+      return;
+    }
+    final dtMs = (elapsed - _inertiaLastTick).inMicroseconds / 1000.0;
+    _inertiaLastTick = elapsed;
+    final velocity = inertia.velocity;
+    final delta = inputModel.pointerAcceleration
+        .applyAtVelocity(inertia.step(dtMs), velocity);
+    if (!inertia.active) {
+      _inertiaTicker.stop();
+    }
+    if (delta == Offset.zero) return;
+    if (inputModel.relativeMouseMode.value) {
+      await inputModel.sendMobileRelativeMouseMove(delta.dx, delta.dy);
+    } else {
+      await ffi.cursorModel.updatePan(delta, Offset.zero, false);
+    }
   }
 
   bool isNotTouchBasedDevice() {
@@ -188,6 +250,9 @@ class _RawTouchGestureDetectorRegionState
       // Cannot use `_lastTapDownDetails` because Flutter calls `onTapUp` before `onTap`, clearing the cached details.
       // Using `_lastTapDownPositionForMouseMode` instead.
       if (shouldBlockMouseModeEvent()) {
+        return;
+      }
+      if (_inertiaStoppedByTouch) {
         return;
       }
       // Mobile, "Mouse mode"
@@ -448,6 +513,8 @@ class _RawTouchGestureDetectorRegionState
       if (!inputModel.relativeMouseMode.value) {
         await inputModel.sendMouse('up', MouseButtons.left);
       }
+    } else {
+      _startInertia(d.velocity.pixelsPerSecond / 1000.0);
     }
   }
 

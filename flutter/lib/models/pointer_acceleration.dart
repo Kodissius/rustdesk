@@ -57,6 +57,13 @@ class PointerAcceleration {
     return 1.0 + (kMaxGain - 1.0) * t;
   }
 
+  /// Returns the cursor movement for a synthetic movement of [delta] at a
+  /// known [velocity], e.g. pointer inertia after the finger is lifted.
+  Offset applyAtVelocity(Offset delta, double velocity) {
+    final gain = enabled ? gainForVelocity(velocity) : 1.0;
+    return delta * (_speed * gain);
+  }
+
   /// Returns the cursor movement for a finger movement of [delta].
   ///
   /// [timestamp] should be the event time (e.g.
