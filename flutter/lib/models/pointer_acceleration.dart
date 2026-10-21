@@ -5,7 +5,8 @@ import 'dart:ui';
 ///
 /// [speed] scales every movement. When [enabled] is true, fast swipes are
 /// additionally multiplied by a gain that grows with finger velocity, so slow
-/// movements stay precise while fast ones cover long distances.
+/// movements stay precise while fast ones cover long distances. [strength] is
+/// the gain reached at high finger velocity.
 ///
 /// With [enabled] false and [speed] at [kDefaultSpeed], [apply] returns the
 /// input delta unchanged.
@@ -19,7 +20,9 @@ class PointerAcceleration {
   static const double kLowVelocity = 0.3;
   // Finger velocity at which the maximum gain is reached.
   static const double kHighVelocity = 2.5;
-  static const double kMaxGain = 4.0;
+  static const double kMinStrength = 2.0;
+  static const double kMaxStrength = 8.0;
+  static const double kDefaultStrength = 4.0;
   // A pause longer than this between two events starts a new stroke.
   static const int _strokeGapUs = 100000;
   // Lower bound for the event interval, so batched events with nearly equal
@@ -30,6 +33,7 @@ class PointerAcceleration {
 
   bool enabled = false;
   double _speed = kDefaultSpeed;
+  double _strength = kDefaultStrength;
 
   Duration? _lastTimestamp;
   double _velocity = 0.0;
@@ -43,6 +47,14 @@ class PointerAcceleration {
     return v.clamp(kMinSpeed, kMaxSpeed).toDouble();
   }
 
+  double get strength => _strength;
+  set strength(double v) => _strength = clampStrength(v);
+
+  static double clampStrength(double v) {
+    if (v.isNaN) return kDefaultStrength;
+    return v.clamp(kMinStrength, kMaxStrength).toDouble();
+  }
+
   /// Forget the previous movement. Call at the start and end of a stroke.
   void reset() {
     _lastTimestamp = null;
@@ -50,11 +62,11 @@ class PointerAcceleration {
   }
 
   /// Gain for a smoothed finger [velocity] in logical pixels per millisecond.
-  static double gainForVelocity(double velocity) {
+  double gainForVelocity(double velocity) {
     if (velocity <= kLowVelocity) return 1.0;
-    if (velocity >= kHighVelocity) return kMaxGain;
+    if (velocity >= kHighVelocity) return _strength;
     final t = (velocity - kLowVelocity) / (kHighVelocity - kLowVelocity);
-    return 1.0 + (kMaxGain - 1.0) * t;
+    return 1.0 + (_strength - 1.0) * t;
   }
 
   /// Returns the cursor movement for a synthetic movement of [delta] at a

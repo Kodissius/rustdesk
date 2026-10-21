@@ -116,6 +116,6 @@ void main() {
     accel.enabled = true;
     expect(accel.applyAtVelocity(d, 0.1), const Offset(20, 0));
     expect(accel.applyAtVelocity(d, 2.5),
-        Offset(20 * PointerAcceleration.kMaxGain, 0));
+        Offset(20 * PointerAcceleration.kDefaultStrength, 0));
   });
 }

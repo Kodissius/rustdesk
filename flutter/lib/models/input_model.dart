@@ -643,6 +643,9 @@ class InputModel {
     pointerAcceleration.speed = double.tryParse(
             bind.mainGetLocalOption(key: kOptionMobilePointerSpeed)) ??
         PointerAcceleration.kDefaultSpeed;
+    pointerAcceleration.strength = double.tryParse(bind.mainGetLocalOption(
+            key: kOptionMobilePointerAccelerationStrength)) ??
+        PointerAcceleration.kDefaultStrength;
     pointerInertia.enabled =
         bind.mainGetLocalOption(key: kOptionMobilePointerInertia) == 'Y';
     pointerInertia.halfLifeMs = double.tryParse(bind.mainGetLocalOption(
@@ -662,6 +665,13 @@ class InputModel {
     await bind.mainSetLocalOption(
         key: kOptionMobilePointerSpeed,
         value: pointerAcceleration.speed.toString());
+  }
+
+  Future<void> setPointerAccelerationStrength(double strength) async {
+    pointerAcceleration.strength = strength;
+    await bind.mainSetLocalOption(
+        key: kOptionMobilePointerAccelerationStrength,
+        value: pointerAcceleration.strength.toString());
   }
 
   Future<void> setPointerInertiaEnabled(bool enabled) async {
