@@ -246,6 +246,9 @@ jobs:
           sed -i "s/org.gradle.jvmargs=-Xmx1024M/org.gradle.jvmargs=-Xmx2g/g" ./flutter/android/gradle.properties
           # temporary use debug sign config
           sed -i "s/signingConfigs.release/signingConfigs.debug/g" ./flutter/android/app/build.gradle
+          # Fork test build: install next to the official RustDesk app
+          sed -i 's/applicationId "com.carriez.flutter_hbb"/applicationId "com.carriez.flutter_hbb.test"/' ./flutter/android/app/build.gradle
+          sed -i '0,/android:label="RustDesk"/s//android:label="RustDesk Test"/' ./flutter/android/app/src/main/AndroidManifest.xml
           case ${{ matrix.job.target }} in
             aarch64-linux-android)
               mkdir -p ./flutter/android/app/src/main/jniLibs/arm64-v8a
