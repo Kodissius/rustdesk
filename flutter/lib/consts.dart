@@ -189,6 +189,9 @@ const String kOptionVirtualMouseScale = "virtual-mouse-scale";
 const String kOptionShowVirtualJoystick = "show-virtual-joystick";
 const String kOptionMobilePointerAcceleration = "mobile-pointer-acceleration";
 const String kOptionMobilePointerSpeed = "mobile-pointer-speed";
+const String kOptionMobilePointerInertia = "mobile-pointer-inertia";
+const String kOptionMobilePointerInertiaLength =
+    "mobile-pointer-inertia-length";
 const String kOptionAllowAskForNoteAtEndOfConnection = "allow-ask-for-note";
 const String kOptionAllowMonitorSwitchMainToolbar = "allow-monitor-switch-main-toolbar";
 const String kOptionAllowMonitorSwitchMinToolbar = "allow-monitor-switch-min-toolbar";

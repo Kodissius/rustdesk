@@ -819,6 +819,9 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Pointer acceleration", ""),
         ("Slow", ""),
         ("Fast", ""),
+        ("Pointer inertia", ""),
+        ("Short", ""),
+        ("Long", ""),
     ].iter().cloned().collect();
 }
 

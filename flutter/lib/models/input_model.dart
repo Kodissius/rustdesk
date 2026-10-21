@@ -21,6 +21,7 @@ import '../common/widgets/keyboard_shortcuts/shortcut_utils.dart';
 import 'input_modifier_utils.dart';
 import 'local_flutter_shortcuts.dart';
 import 'pointer_acceleration.dart';
+import 'pointer_inertia.dart';
 import 'relative_mouse_model.dart';
 import '../common.dart';
 import '../consts.dart';
@@ -454,6 +455,7 @@ class InputModel {
 
   // Mobile pointer speed / acceleration for one-finger cursor movement.
   final pointerAcceleration = PointerAcceleration();
+  final pointerInertia = PointerInertia();
 
   var _lastScale = 1.0;
 
@@ -641,6 +643,11 @@ class InputModel {
     pointerAcceleration.speed = double.tryParse(
             bind.mainGetLocalOption(key: kOptionMobilePointerSpeed)) ??
         PointerAcceleration.kDefaultSpeed;
+    pointerInertia.enabled =
+        bind.mainGetLocalOption(key: kOptionMobilePointerInertia) == 'Y';
+    pointerInertia.halfLifeMs = double.tryParse(bind.mainGetLocalOption(
+            key: kOptionMobilePointerInertiaLength)) ??
+        PointerInertia.kDefaultHalfLifeMs;
   }
 
   Future<void> setPointerAccelerationEnabled(bool enabled) async {
@@ -655,6 +662,20 @@ class InputModel {
     await bind.mainSetLocalOption(
         key: kOptionMobilePointerSpeed,
         value: pointerAcceleration.speed.toString());
+  }
+
+  Future<void> setPointerInertiaEnabled(bool enabled) async {
+    pointerInertia.enabled = enabled;
+    pointerInertia.stop();
+    await bind.mainSetLocalOption(
+        key: kOptionMobilePointerInertia, value: enabled ? 'Y' : 'N');
+  }
+
+  Future<void> setPointerInertiaHalfLife(double halfLifeMs) async {
+    pointerInertia.halfLifeMs = halfLifeMs;
+    await bind.mainSetLocalOption(
+        key: kOptionMobilePointerInertiaLength,
+        value: pointerInertia.halfLifeMs.toString());
   }
 
   void handleKeyDownEventModifiers(KeyEvent e) {

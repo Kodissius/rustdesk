@@ -3,6 +3,7 @@ import 'package:flutter_hbb/common.dart';
 import 'package:flutter_hbb/models/input_model.dart';
 import 'package:flutter_hbb/models/model.dart';
 import 'package:flutter_hbb/models/pointer_acceleration.dart';
+import 'package:flutter_hbb/models/pointer_inertia.dart';
 import 'package:get/get.dart';
 import 'package:toggle_switch/toggle_switch.dart';
 
@@ -360,6 +361,12 @@ class _GestureHelpState extends State<GestureHelp> {
       setState(() {});
     }
 
+    final inertia = inputModel.pointerInertia;
+    Future<void> toggleInertia() async {
+      await inputModel.setPointerInertiaEnabled(!inertia.enabled);
+      setState(() {});
+    }
+
     return SizedBox(
       width: 284,
       child: Column(
@@ -405,6 +412,46 @@ class _GestureHelpState extends State<GestureHelp> {
               ],
             ),
           ),
+          Transform.translate(
+            offset: const Offset(-10.0, -12.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Checkbox(
+                  value: inertia.enabled,
+                  onChanged: (value) async {
+                    if (value == null) return;
+                    await toggleInertia();
+                  },
+                ),
+                InkWell(
+                  onTap: toggleInertia,
+                  child: Text(translate('Pointer inertia')),
+                ),
+              ],
+            ),
+          ),
+          if (inertia.enabled)
+            Transform.translate(
+              offset: const Offset(0.0, -12.0),
+              child: Row(
+                children: [
+                  Text(translate('Short')),
+                  Expanded(
+                    child: Slider(
+                      value: inertia.halfLifeMs,
+                      min: PointerInertia.kMinHalfLifeMs,
+                      max: PointerInertia.kMaxHalfLifeMs,
+                      onChanged: (value) async {
+                        await inputModel.setPointerInertiaHalfLife(value);
+                        setState(() {});
+                      },
+                    ),
+                  ),
+                  Text(translate('Long')),
+                ],
+              ),
+            ),
         ],
       ),
     );
