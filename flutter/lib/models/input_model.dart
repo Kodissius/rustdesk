@@ -20,6 +20,7 @@ import '../../models/state_model.dart';
 import '../common/widgets/keyboard_shortcuts/shortcut_utils.dart';
 import 'input_modifier_utils.dart';
 import 'local_flutter_shortcuts.dart';
+import 'pointer_acceleration.dart';
 import 'relative_mouse_model.dart';
 import '../common.dart';
 import '../consts.dart';
@@ -451,6 +452,9 @@ class InputModel {
   double _mobileDeltaRemainderX = 0.0;
   double _mobileDeltaRemainderY = 0.0;
 
+  // Mobile pointer speed / acceleration for one-finger cursor movement.
+  final pointerAcceleration = PointerAcceleration();
+
   var _lastScale = 1.0;
 
   bool _pointerMovedAfterEnter = false;
@@ -628,6 +632,29 @@ class InputModel {
       _trackpadSpeed = kDefaultTrackpadSpeed;
     }
     _trackpadSpeedInner = _trackpadSpeed / 100.0;
+  }
+
+  /// Loads the mobile pointer acceleration / speed local options.
+  void loadPointerAccelerationOptions() {
+    pointerAcceleration.enabled =
+        bind.mainGetLocalOption(key: kOptionMobilePointerAcceleration) == 'Y';
+    pointerAcceleration.speed = double.tryParse(
+            bind.mainGetLocalOption(key: kOptionMobilePointerSpeed)) ??
+        PointerAcceleration.kDefaultSpeed;
+  }
+
+  Future<void> setPointerAccelerationEnabled(bool enabled) async {
+    pointerAcceleration.enabled = enabled;
+    pointerAcceleration.reset();
+    await bind.mainSetLocalOption(
+        key: kOptionMobilePointerAcceleration, value: enabled ? 'Y' : 'N');
+  }
+
+  Future<void> setPointerSpeed(double speed) async {
+    pointerAcceleration.speed = speed;
+    await bind.mainSetLocalOption(
+        key: kOptionMobilePointerSpeed,
+        value: pointerAcceleration.speed.toString());
   }
 
   void handleKeyDownEventModifiers(KeyEvent e) {

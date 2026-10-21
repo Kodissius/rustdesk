@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hbb/common.dart';
 import 'package:flutter_hbb/models/input_model.dart';
 import 'package:flutter_hbb/models/model.dart';
+import 'package:flutter_hbb/models/pointer_acceleration.dart';
 import 'package:get/get.dart';
 import 'package:toggle_switch/toggle_switch.dart';
 
@@ -272,6 +273,8 @@ class _GestureHelpState extends State<GestureHelp> {
                                     ],
                                   )),
                             )),
+                      if (!_touchMode && widget.inputModel != null)
+                        _buildPointerSpeedOptions(widget.inputModel!),
                     ],
                   ),
                 ),
@@ -347,6 +350,64 @@ class _GestureHelpState extends State<GestureHelp> {
                 )),
               ],
             )));
+  }
+
+  /// "Pointer speed" slider and "Pointer acceleration" checkbox for mouse mode.
+  Widget _buildPointerSpeedOptions(InputModel inputModel) {
+    final accel = inputModel.pointerAcceleration;
+    Future<void> toggleAcceleration() async {
+      await inputModel.setPointerAccelerationEnabled(!accel.enabled);
+      setState(() {});
+    }
+
+    return SizedBox(
+      width: 284,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(translate('Pointer speed')),
+          Row(
+            children: [
+              Text(translate('Slow')),
+              Expanded(
+                child: Slider(
+                  value: accel.speed,
+                  min: PointerAcceleration.kMinSpeed,
+                  max: PointerAcceleration.kMaxSpeed,
+                  divisions: 10,
+                  label: '${accel.speed.toStringAsFixed(2)}x',
+                  onChanged: (value) async {
+                    await inputModel.setPointerSpeed(value);
+                    setState(() {});
+                  },
+                ),
+              ),
+              Text(translate('Fast')),
+            ],
+          ),
+          Transform.translate(
+            offset: const Offset(-10.0, -6.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Checkbox(
+                  value: accel.enabled,
+                  onChanged: (value) async {
+                    if (value == null) return;
+                    await toggleAcceleration();
+                  },
+                ),
+                InkWell(
+                  onTap: toggleAcceleration,
+                  child: Text(translate('Pointer acceleration')),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

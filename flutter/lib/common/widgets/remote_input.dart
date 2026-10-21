@@ -322,11 +322,17 @@ class _RawTouchGestureDetectorRegionState
     }
   }
 
+  // Cursor movement for a one-finger move in mouse mode, with the mobile
+  // pointer speed / acceleration applied.
+  Offset _pointerDelta(DragUpdateDetails d) =>
+      inputModel.pointerAcceleration.apply(d.delta, d.sourceTimeStamp);
+
   onHoldDragStart(DragStartDetails d) async {
     lastDeviceKind = d.kind;
     if (isNotTouchBasedDevice()) {
       return;
     }
+    inputModel.pointerAcceleration.reset();
     if (!handleTouch) {
       if (isSpecialHoldDragActive) return;
       await inputModel.sendMouse('down', MouseButtons.left);
@@ -339,7 +345,8 @@ class _RawTouchGestureDetectorRegionState
     }
     if (!handleTouch) {
       if (isSpecialHoldDragActive) return;
-      await ffi.cursorModel.updatePan(d.delta, d.localPosition, handleTouch);
+      await ffi.cursorModel
+          .updatePan(_pointerDelta(d), d.localPosition, handleTouch);
     }
   }
 
@@ -347,6 +354,7 @@ class _RawTouchGestureDetectorRegionState
     if (isNotTouchBasedDevice()) {
       return;
     }
+    inputModel.pointerAcceleration.reset();
     if (!handleTouch) {
       await inputModel.sendMouse('up', MouseButtons.left);
     }
@@ -359,6 +367,7 @@ class _RawTouchGestureDetectorRegionState
     if (isNotTouchBasedDevice()) {
       return;
     }
+    inputModel.pointerAcceleration.reset();
     if (handleTouch) {
       if (lastTapDownDetails != null) {
         await ffi.cursorModel.move(lastTapDownDetails.localPosition.dx,
@@ -416,14 +425,18 @@ class _RawTouchGestureDetectorRegionState
     }
     // In relative mouse mode, send delta directly without position tracking.
     if (inputModel.relativeMouseMode.value) {
-      await inputModel.sendMobileRelativeMouseMove(d.delta.dx, d.delta.dy);
+      final delta = _pointerDelta(d);
+      await inputModel.sendMobileRelativeMouseMove(delta.dx, delta.dy);
     } else {
-      await ffi.cursorModel.updatePan(d.delta, d.localPosition, handleTouch);
+      // In touch mode the finger is the cursor, so no speed or acceleration.
+      final delta = handleTouch ? d.delta : _pointerDelta(d);
+      await ffi.cursorModel.updatePan(delta, d.localPosition, handleTouch);
     }
   }
 
   onOneFingerPanEnd(DragEndDetails d) async {
     _touchModePanStarted = false;
+    inputModel.pointerAcceleration.reset();
     if (isNotTouchBasedDevice()) {
       return;
     }
@@ -444,6 +457,7 @@ class _RawTouchGestureDetectorRegionState
   // double-click problem on iPad with magic mouse.
   onOneFingerPanCancel() {
     _touchModePanStarted = false;
+    inputModel.pointerAcceleration.reset();
   }
 
   // scale + pan event

@@ -1409,6 +1409,7 @@ class FfiModel with ChangeNotifier {
     }
     if (isMobile) {
       virtualMouseMode.loadOptions();
+      parent.target?.inputModel.loadPointerAccelerationOptions();
     }
     if (connType == ConnType.fileTransfer) {
       parent.target?.fileModel.onReady();
